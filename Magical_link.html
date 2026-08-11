@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Global Celebration Matrix v32</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Pacifico&family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#030109;color:#fff;font-family:"Poppins",sans-serif;min-height:100vh;overflow-x:hidden;}
+
+canvas#bgCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;}
+#bgPhotoBlur {position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;background-size:cover;background-position:center;filter:blur(40px) brightness(0.3);transform:scale(1.1);display:none;pointer-events:none;}
+
+.container{max-width:1100px;margin:0 auto;padding:40px 20px;position:relative;z-index:10;}
+.screen-view{display:none;position:relative;z-index:20;max-width:520px;margin:30px auto;background:linear-gradient(145deg, rgba(16,8,32,0.95), rgba(6,2,14,0.98));border:2px solid transparent;background-clip:padding-box;border-radius:32px;padding:40px 35px;box-shadow:0 0 60px rgba(255,0,160,0.35), inset 0 0 25px rgba(0,229,255,0.15);text-align:center;backdrop-filter:blur(20px);}
+.screen-view::after {content:''; position:absolute; top:-2px; bottom:-2px; left:-2px; right:-2px; background:linear-gradient(45deg, #ff00a0, #00e5ff, #ffd700); border-radius:34px; z-index:-1; opacity:0.7;}
+
+h1.main-title{font-family:'Pacifico',cursive;font-size:3.2rem;background:linear-gradient(45deg,#ff00a0,#00e5ff,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;}
+.sub-title{color:#00e5ff;font-family:'Orbitron',sans-serif;font-size:0.85rem;letter-spacing:2px;margin-bottom:25px;}
+
+#authScreen {display:block; margin-top:6vh;}
+#entryScreen {display:none; margin-top:10vh;}
+
+select.region-select {width:100%; padding:18px; font-size:1.1rem; background:rgba(0,0,0,0.8); border:2px solid #00e5ff; border-radius:18px; color:#fff; font-family:'Orbitron',sans-serif; margin-bottom:20px; outline:none; cursor:pointer;}
+select.region-select:focus {border-color:#ff00a0; box-shadow:0 0 20px rgba(255,0,160,0.5);}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;}
+.card{background:rgba(18,8,32,0.75);border:1px solid rgba(255,0,160,0.22);border-radius:24px;padding:20px;text-align:center;cursor:pointer;transition:0.3s;backdrop-filter:blur(15px);}
+.card:hover{transform:translateY(-5px);border-color:#00e5ff;box-shadow:0 12px 35px rgba(0,229,255,0.3);}
+.card .emoji{font-size:3rem;margin-bottom:10px;display:block;}
+
+label{display:block;text-align:left;font-size:0.75rem;font-weight:900;color:#00e5ff;margin:12px 0 4px 4px;text-transform:uppercase;letter-spacing:1px;}
+input[type="text"], input[type="number"], input[type="email"], input[type="password"], select{width:100%;padding:14px 18px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.15);border-radius:14px;color:#fff;font-size:0.95rem;outline:none;margin-bottom:10px;transition:0.3s;}
+input:focus {border-color:#00e5ff; box-shadow:0 0 12px rgba(0,229,255,0.3);}
+
+.file-upload-wrapper {position:relative; margin-bottom:15px; text-align:left;}
+.custom-file-label {display:flex; align-items:center; justify-content:center; gap:10px; background:linear-gradient(135deg,rgba(255,0,160,0.1),rgba(0,229,255,0.1)); border:2px dashed rgba(0,229,255,0.4); padding:14px; border-radius:14px; cursor:pointer; color:#00e5ff; font-weight:600;}
+.hidden-file-input {position:absolute; left:0; top:0; opacity:0; width:100%; height:100%; cursor:pointer;}
+.file-status-text {font-size:0.75rem; color:#ffd700; margin-top:4px; margin-left:6px; font-weight:bold; display:none;}
+
+.btn{width:100%;padding:16px;border-radius:18px;border:none;font-weight:900;cursor:pointer;font-family:'Orbitron',sans-serif;margin-top:10px;transition:0.3s;font-size:1.05rem;}
+.btn-prime{background:linear-gradient(45deg,#ff00a0,#7700ff);color:#fff;box-shadow:0 4px 20px rgba(255,0,160,0.4);}
+.btn-prime:hover{transform:translateY(-2px);filter:brightness(1.15);box-shadow:0 6px 25px rgba(255,0,160,0.6);}
+.btn-return{background:rgba(255,255,255,0.04);color:#aaa;border:1px solid rgba(255,255,255,0.08);margin-top:12px;font-size:0.9rem;padding:12px;}
+
+.auth-tabs {display:flex; gap:10px; margin-bottom:25px; background:rgba(0,0,0,0.4); padding:6px; border-radius:16px; border:1px solid rgba(255,255,255,0.08);}
+.auth-tab {flex:1; padding:12px; background:transparent; border:none; border-radius:12px; color:#aaa; font-family:'Orbitron',sans-serif; font-weight:bold; cursor:pointer; transition:0.3s;}
+.auth-tab.active {background:linear-gradient(45deg,rgba(255,0,160,0.3),rgba(0,229,255,0.3)); border:1px solid rgba(0,229,255,0.5); color:#fff; box-shadow:0 0 15px rgba(0,229,255,0.2);}
+
+.share-panel{margin-top:20px;background:rgba(0,229,255,0.04);border:1px solid rgba(0,229,255,0.18);border-radius:18px;padding:16px;display:none;}
+.share-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px;}
+.share-btn{padding:10px;border-radius:10px;border:none;font-weight:700;font-size:0.8rem;cursor:pointer;color:#fff;}
+.sh-fb{background:#1877f2;} .sh-insta{background:linear-gradient(45deg,#f09433,#e1306c,#c13584,#833ab4);} .sh-wa{background:#25d366;}
+
+.photo-holder{width:160px;height:160px;border-radius:50%;border:4px solid #ff00a0;margin:15px auto;overflow:hidden;box-shadow:0 0 25px rgba(255,0,160,0.55);}
+.photo-holder img{width:100%;height:100%;object-fit:cover;}
+.wish-text-area {white-space:pre-line; text-align:left; background:rgba(0,0,0,0.65); padding:25px; border-radius:18px; margin-top:15px; border-left:4px solid #00e5ff; font-size:0.95rem; line-height:1.8; color:#e2e2ff; max-height:220px; overflow-y:auto;}
+
+.viz-container{width:100%;height:75px;margin-top:20px;display:flex;align-items:flex-end;justify-content:center;gap:5px;background:rgba(255,255,255,0.02);padding:10px;border-radius:16px;}
+.viz-bar{width:8px;height:5px;background:linear-gradient(to top,#ff00a0,#00e5ff,#ffd700);border-radius:4px;transition:height 0.08s ease-in-out;}
+
+#clickToPlayOverlay {position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(11,5,22,0.98); border-radius:32px; z-index:50; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;}
+.pulse-btn {padding:20px 50px; background:linear-gradient(45deg,#ff00a0,#7700ff); color:#fff; border:none; border-radius:40px; font-weight:900; font-family:'Orbitron',sans-serif; font-size:1.3rem; animation:pulse 1.5s infinite; cursor:pointer;}
+@keyframes pulse { 0% {transform:scale(1);box-shadow:0 0 20px rgba(255,0,160,0.5);} 50% {transform:scale(1.08); box-shadow:0 0 40px rgba(255,0,160,0.9);} 100% {transform:scale(1);box-shadow:0 0 20px rgba(255,0,160,0.5);} }
+
+@keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.05); opacity: 1; } 70% { transform: scale(0.9); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes floatUp { 0% { transform: translateY(0px) rotate(0deg); opacity: 1; } 100% { transform: translateY(-300px) rotate(360deg); opacity: 0; } }
+.celebrate-pop { animation: bounceIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+.floating-element { position: absolute; pointer-events: none; animation: floatUp 4s linear infinite; z-index: 25; font-size: 2rem; }
+</style>
+</head>
+<body>
+
+<div id="bgPhotoBlur"></div>
+<canvas id="bgCanvas"></canvas>
+
+<!-- 0. AUTH SCREEN (LOGIN / SIGN UP) -->
+<div class="screen-view" id="authScreen">
+  <h1 class="main-title" style="font-size:2.6rem;">Cyber Portal</h1>
+  <p class="sub-title">SECURE GATEWAY</p>
+  
+  <div class="auth-tabs">
+    <button class="auth-tab active" id="tabLoginBtn" onclick="switchAuthMode('login')">LOGIN</button>
+    <button class="auth-tab" id="tabSignupBtn" onclick="switchAuthMode('signup')">SIGN UP</button>
+  </div>
+  
+  <div id="loginFormContainer">
+    <label>Email Address:</label>
+    <input type="email" id="loginEmail" placeholder="name@example.com">
+    <label>Password:</label>
+    <input type="password" id="loginPass" placeholder="••••••••">
+    <button class="btn btn-prime" onclick="handleLogin()">ACCESS MATRIX 🚀</button>
+  </div>
+
+  <div id="signupFormContainer" style="display:none;">
+    <label>Full Name:</label>
+    <input type="text" id="signupName" placeholder="Your Name">
+    <label>Email Address:</label>
+    <input type="email" id="signupEmail" placeholder="name@example.com">
+    <label>Password:</label>
+    <input type="password" id="signupPass" placeholder="Create Password">
+    <button class="btn btn-prime" onclick="handleSignup()">INITIALIZE ✨</button>
+  </div>
+  
+  <p id="authMsg" style="margin-top:15px; font-size:0.85rem; color:#ffd700;"></p>
+</div>
+
+<!-- 1. ENTRY SCREEN -->
+<div class="screen-view" id="entryScreen">
+  <h1 class="main-title">Global Matrix</h1>
+  <p class="sub-title">CHOOSE CATEGORY / REGION</p>
+  
+  <select class="region-select" id="regionSelect">
+    <option value="nepal">🇳🇵 Nepal - Festivals</option>
+    <option value="india">🇮🇳 India - Festivals</option>
+    <option value="usa">🇺🇸 USA / UK - Festivals</option>
+    <option value="japan">🇯🇵 Japan - Festivals</option>
+    <option value="arab">🇦🇪 Middle East (Arab) - Festivals</option>
+    <option value="latin">🇧🇷 Latin America - Festivals</option>
+    <option value="france">🇫🇷 France - Festivals</option>
+    <option value="germany">🇩🇪 Germany - Festivals</option>
+    <option value="korea">🇰🇷 Korea - Festivals</option>
+    <option value="china">🇨🇳 China - Festivals</option>
+    <option value="personal">🎉 Special Occasions (Birthday, Anniversary, Propose)</option>
+  </select>
+  
+  <button class="btn btn-prime" onclick="enterMatrix()">SELECT CATEGORY 🚀</button>
+  <button class="btn btn-return" onclick="logoutSession()">🔒 Logout</button>
+</div>
+
+<!-- 2. DASHBOARD -->
+<div class="container" id="hubDashboard" style="display:none;">
+  <header style="text-align:center;">
+    <h1 class="main-title" id="dashTitle">Festivals</h1>
+    <p class="sub-title">Select an item to customize</p>
+  </header>
+  <div class="grid" id="themeGrid"></div>
+  <div style="text-align:center; margin-top:30px;">
+    <button class="btn btn-return" style="width:auto; padding:10px 30px;" onclick="location.reload()">🌍 Change Category</button>
+  </div>
+</div>
+
+<!-- 3. CONFIG SCREEN -->
+<div class="screen-view" id="configScreen">
+  <h2 id="configTitle" style="font-family:'Orbitron',sans-serif; color:#00e5ff; margin-bottom:20px;">Setup</h2>
+  
+  <label>Language / Wish Language (भाषा छान्नुहोस्):</label>
+  <select id="configWishLang" class="region-select" style="font-size:0.95rem; padding:12px; margin-bottom:12px;">
+    <option value="nepal">🇳🇵 Nepali (नेपाली)</option>
+    <option value="india">🇮🇳 Hindi (हिन्दी)</option>
+    <option value="usa">🇺🇸 English (US/UK)</option>
+    <option value="japan">🇯🇵 Japanese (日本語)</option>
+    <option value="arab">🇦🇪 Arabic (العربية)</option>
+    <option value="latin">🇧🇷 Spanish / Latin (Español)</option>
+    <option value="france">🇫🇷 French (Français)</option>
+    <option value="germany">🇩🇪 German (Deutsch)</option>
+    <option value="korea">🇰🇷 Korean (한국어)</option>
+    <option value="china">🇨🇳 Chinese (中文)</option>
+  </select>
+
+  <label>Name:</label>
+  <input type="text" id="targetName" placeholder="e.g. Aayush">
+
+  <div id="extraDynamicFields" style="display:none;">
+    <div id="fieldAgeGroup" style="display:none;">
+      <label>Age:</label>
+      <input type="number" id="targetAge" placeholder="e.g. 20">
+    </div>
+    <div id="fieldTimeGroup" style="display:none;">
+      <label>Journey Together (e.g. Years / Months):</label>
+      <input type="text" id="targetTimeTogether" placeholder="e.g. 2 Years & 6 Months">
+    </div>
+  </div>
+
+  <label>Audio Mode:</label>
+  <select id="audioPresetSelect" onchange="toggleAudioFields()">
+    <option value="auto" selected>🎵 Auto Match Theme Tune (Synthesizer)</option>
+    <option value="upload">📤 Upload Custom Track</option>
+  </select>
+  <div id="audioUploadBlock" style="display:none; margin-bottom:15px;">
+    <div class="file-upload-wrapper">
+      <div class="custom-file-label" style="border-color:#ff00a0; color:#ff00a0;">🎵 Select Music File</div>
+      <input type="file" id="audioFile" class="hidden-file-input" accept="audio/*">
+      <div class="file-status-text" id="audioStatus"></div>
+    </div>
+  </div>
+  
+  <label>Upload Portrait Photo:</label>
+  <div class="file-upload-wrapper">
+    <div class="custom-file-label">📸 Select Portrait Photo</div>
+    <input type="file" id="photoFile" class="hidden-file-input" accept="image/*">
+    <div class="file-status-text" id="photoStatus"></div>
+  </div>
+  
+  <button class="btn btn-prime" onclick="generateSharedLink()">Build & Encrypt Link 🚀</button>
+  
+  <div class="share-panel" id="shareBlock">
+    <input type="text" id="liveUrl" readonly style="text-align:center; color:#00e5ff; font-family:monospace; margin-bottom:12px;">
+    <button class="btn" style="background:#00e5ff; color:#000; margin-top:0; font-weight:900;" onclick="copySharedLink()">📋 Copy Link</button>
+    <div class="share-grid">
+      <button class="share-btn sh-fb" onclick="shareToFB()">FB</button>
+      <button class="share-btn sh-insta" onclick="shareToInsta()">IG</button>
+      <button class="share-btn sh-wa" onclick="shareToWA()">WA</button>
+    </div>
+  </div>
+  <button class="btn btn-return" onclick="showDashboard()">Back</button>
+</div>
+
+<!-- 4. DISPLAY SCREEN -->
+<div class="screen-view" id="displayScreen" style="padding-top:40px;">
+  <div id="clickToPlayOverlay">
+    <button class="pulse-btn" onclick="startExperience()">TAP TO OPEN 🎁</button>
+  </div>
+
+  <h2 id="dispEventTitle" style="font-family:'Orbitron', sans-serif; color:#ffd700; margin-bottom:15px; font-size:1.4rem;">EVENT</h2>
+  <div class="photo-holder" id="dispPhotoWrap" style="display:none;"><img id="dispPhoto" src=""></div>
+  <h1 id="dispName" style="font-size:2.8rem; margin:15px 0; font-family:'Pacifico', cursive; color:#ff00a0;">Name</h1>
+  <div class="wish-text-area" id="dispMessage"></div>
+  
+  <p style="color:#00e5ff; font-family:'Orbitron',sans-serif; font-size:0.7rem; margin-top:20px; letter-spacing:2px;">LIVE SPECTRUM</p>
+  <div class="viz-container" id="visualizerContainer"></div>
+  
+  <button class="btn btn-return" onclick="location.href=window.location.pathname" style="margin-top:25px; border-color:#00e5ff; color:#00e5ff;">Create Your Own 🚀</button>
+</div>
+
+<script>
+const canvas=document.getElementById('bgCanvas'); const ctx=canvas.getContext('2d'); let particles=[];
+function resize(){canvas.width=window.innerWidth; canvas.height=window.innerHeight;} resize(); window.addEventListener('resize',resize);
+for(let i=0; i<40; i++)particles.push({x:Math.random()*window.innerWidth, y:Math.random()*window.innerHeight, r:Math.random()*2+1, vx:(Math.random()-0.5)*0.5, vy:(Math.random()-0.5)*0.5});
+function drawMatrix(){ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle='rgba(0,229,255,0.2)'; particles.forEach(p=>{p.x+=p.vx; p.y+=p.vy; if(p.x<0||p.x>canvas.width)p.vx*=-1; if(p.y<0||p.y>canvas.height)p.vy*=-1; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();}); requestAnimationFrame(drawMatrix);} drawMatrix();
+
+/* Auth Logic handlers */
+function switchAuthMode(mode) {
+  const loginForm = document.getElementById('loginFormContainer');
+  const signupForm = document.getElementById('signupFormContainer');
+  const btnLogin = document.getElementById('tabLoginBtn');
+  const btnSignup = document.getElementById('tabSignupBtn');
+  document.getElementById('authMsg').textContent = '';
+  
+  if(mode === 'login') {
+    loginForm.style.display = 'block';
+    signupForm.style.display = 'none';
+    btnLogin.classList.add('active');
+    btnSignup.classList.remove('active');
+  } else {
+    loginForm.style.display = 'none';
+    signupForm.style.display = 'block';
+    btnSignup.classList.add('active');
+    btnLogin.classList.remove('active');
+  }
+}
+
+function handleSignup() {
+  const name = document.getElementById('signupName').value.trim();
+  const email = document.getElementById('signupEmail').value.trim();
+  const pass = document.getElementById('signupPass').value;
+  const msg = document.getElementById('authMsg');
+  
+  if(!name || !email || !pass) {
+    msg.textContent = '⚠️ Please fill in all fields!';
+    return;
+  }
+  
+  localStorage.setItem('matrix_user', JSON.stringify({name, email, pass}));
+  msg.style.color = '#00e5ff';
+  msg.textContent = '✨ Account created successfully! Please login.';
+  setTimeout(() => switchAuthMode('login'), 1200);
+}
+
+function handleLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const msg = document.getElementById('authMsg');
+  
+  const savedUser = JSON.parse(localStorage.getItem('matrix_user'));
+  
+  if(!savedUser) {
+    msg.textContent = '⚠️ No account found. Please sign up first!';
+    return;
+  }
+  
+  if(savedUser.email === email && savedUser.pass === pass) {
+    localStorage.setItem('matrix_logged_in', 'true');
+    checkAuthSession();
+  } else {
+    msg.textContent = '❌ Invalid email or password!';
+  }
+}
+
+function checkAuthSession() {
+  const isLoggedIn = localStorage.getItem('matrix_logged_in');
+  if(isLoggedIn === 'true') {
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('entryScreen').style.display = 'block';
+  } else {
+    document.getElementById('authScreen').style.display = 'block';
+    document.getElementById('entryScreen').style.display = 'none';
+  }
+}
+
+function logoutSession() {
+  localStorage.removeItem('matrix_logged_in');
+  checkAuthSession();
+}
+
+const globalFestivals = [
+  // 1. Nepal
+  {id:"f1", lang:"nepal", name:"Nepal: दशैं (Dashain)", icon:"🪁", type:"festival", txt:"माता दुर्गाले तिम्रो रक्षा गरून। विजय दशमीको हार्दिक मंगलमय शुभकामना! तिम्रो जीवनमा सुख, शान्ति, समृद्धि, र उत्तरोत्तर प्रगतिको देश विदेशभरि जयजयकार होस्। हरेक संकटबाट मुक्ति मिलोस्, आरोग्यता प्राप्त होस् र तिम्रा सारा सपनाहरू बिना कुनै बाधा पूरा होऊन्। परिवारमा सधैं हँсіखुसी र प्रेमको दीपावली छाटोस्!"},
+  {id:"f2", lang:"nepal", name:"Nepal: तिहार (Tihar)", icon:"🪔", type:"festival", txt:"झिलिमिली बत्तीको चाड, लक्ष्मी माताले तिम्रो घरमा सदा बास गरून। तिहारको धेरैधेरै मंगलमय शुभकामना! भाइटीकाले सम्बन्ध अझ प्रगाढ बनाओस्, यश, कीर्ति र ऐश्वर्यको ढोका खुलोस्। तिम्रो मुहारमा कहिल्यै खुसीको कमी नहोस् र जीवन उज्यालो प्रकाशझैं चम्किरहवस्。"},
+  {id:"f3", lang:"nepal", name:"Nepal: छठ पूजा (Chhath)", icon:"🌅", type:"festival", txt:"छठ माताले परिवारमा सुख, शान्ति र अगाध समृद्धि ल्याऊन्। अस्ताउँदो र उदाउँदो सूर्यको उपासनाले तिम्रो जीवनमा नयाँ ऊर्जा र सकारात्मकता थपियोस्। छठ पर्वको हार्दिक मंगलमय शुभकामना!"},
+  {id:"f4", lang:"nepal", name:"Nepal: ल्होसार (Lhosar)", icon:"🏔️", type:"festival", txt:"नयाँ वर्ष ल्होसारको पावन अवसरमा सुख, शान्ति, सुस्वास्थ्य र प्रगतिको अनन्त शुभकामना! ताशी देलेक! यो नयाँ वर्षले तिम्रो जीवनमा नयाँ सम्भावनाका ढोकाहरू खोलोस् र सफलताको शिखर चुम्न सकून्。"},
+  {id:"f5", lang:"nepal", name:"Nepal: माघे संक्रान्ति", icon:"🍠", type:"festival", txt:"माघे संक्रान्ति पर्वको हार्दिक मंगलमय शुभकामना! शरीरमा उष्णता, मनमा शीतलता र जीवनमा मिठास सधैं छाइरहोस्। घ्यू, चाकु, तिलको लड्डु जस्तै तिम्रो जीवन पनि मिठास र प्रचुरताले भरिपूर्ण रहोस्。"},
+  {id:"f6", lang:"nepal", name:"Nepal: तीज (Teej)", icon:"💃", type:"festival", txt:"हरितालिका तीजको व्रत र पर्वको सफलताको हार्दिक शुभकामना! सुख, सौभाग्य र सुस्वास्थ्य भरपूर प्राप्त होस्। तिम्रो दाम्पत्य जीवन वा व्यक्तिगत जीवनमा कहिले पनि दुःखको छाल नआओस्, सधैं खुसीको बहार छाओस्。"},
+  {id:"f7", lang:"nepal", name:"Nepal: महाशिवरात्रि", icon:"🔱", type:"festival", txt:"ॐ नमः शिवाय! महाशिवरात्रिको पवित्र पर्वमा भगवान शिवको कृपा सदा तपाईं/तिम्रो परिवारमाथि रहोस्। जीवनका हरेक कष्टहरू हरण हुन् र मानसिक शान्ति तथा आध्यात्मिक चेतनाको प्राप्ति होस्। हर हर महादेव!"},
+  {id:"f8", lang:"nepal", name:"Nepal: इन्द्र जात्रा", icon:"🎭", type:"festival", txt:"ऐतिहासिक इन्द्र जात्राको उल्लासपूर्ण अवसरमा सुख, शान्ति र सांस्कृतिक सम्वृद्धिको मंगलमय शुभकामना! सांस्कृतिक पहिचान र परम्पराले तिम्रो जीवनमा उत्साह र उमंग थपिराखोस्。"},
+  {id:"f9", lang:"nepal", name:"Nepal: बुद्ध जयन्ती", icon:"🪷", type:"festival", txt:"अहिंसा, करुणा र शान्तिको अग्रদূত गौतम बुद्धको जन्मजयन्तीको मंगलमय शुभकामना! तिम्रो मनमा सधैं दया, सद्भाव र पवित्र विचारहरूको बास रहोस्। जीवनमा सन्तुष्टि प्राप्त होस्。"},
+  {id:"f10", lang:"nepal", name:"Nepal: होली (Fagu Purnima)", icon:"🎨", type:"festival", txt:"रंगहरूको पर्व होलीको हार्दिक मंगलमय शुभकामना! जीवनमा खुसी, उमंग र सफलताका रंगहरू यति गाढा रङ्गुन् कि कहिल्यै नफिकाउन्। हरेक दिन नयाँ उत्साह लिएर आएको होस्。"},
+
+  // 2. India
+  {id:"f11", lang:"india", name:"India: दिवाली (Diwali)", icon:"🪔", type:"festival", txt:"दीपावली का यह पावन पर्व आपके जीवन में ढेरों खुशियां, अपार प्रकाश और सफलता लेकर आए। शुभ दीपावली! माता लक्ष्मी और गणेश जी की कृपा से आपके घर में कभी भी अन्न-धन की कमी न हो। आपके सभी सपने सच हों और जीवन रोशन रहे。"},
+  {id:"f12", lang:"india", name:"India: होली (Holi)", icon:"🎨", type:"festival", txt:"रंगों का यह त्योहार आपके जीवन में नई उमंग, जोश और ढेरों खुशियां भर दे। होली की बहुत-बहुत शुभकामनाएं! अपनों का प्यार और जीवन की मिठास हमेशा बनी रहे。"},
+  {id:"f13", lang:"india", name:"India: मकर संक्रांति", icon:"🪁", type:"festival", txt:"मकर संक्रांति की आपको और आपके पूरे परिवार को हार्दिक शुभकामनाएं। तिल-गुड घ्या गोड-गोड बोला! जीवन में मिठास और सफलता की पतंग हमेशा ऊंची उड़ती रहे。"},
+  {id:"f14", lang:"india", name:"India: रक्षा बंधन", icon:"🧵", type:"festival", txt:"भाई-बहन के अटूट प्रेम और विश्वास के प्रतीक रक्षाबंधन की ढेरों बधाइयां और अनंत शुभकामनाएं! यह रिश्ता हमेशा सलामत रहे और खुशियों से भरा रहे。"},
+  {id:"f15", lang:"india", name:"India: दुर्गा पूजा", icon:"🌺", type:"festival", txt:"माँ दुर्गा का आशीर्वाद आपके जीवन में सुख, शांति, शक्ति और समृद्धि लेकर आए। शुभ दुर्गा पूजा! माता रानी आपको हर मुश्किल से लड़ने की शक्ति प्रदान करें。"},
+  {id:"f16", lang:"india", name:"India: गणेश चतुर्थी", icon:"🐘", type:"festival", txt:"गणपति बाप्पा मोरया! भगवान गणेश आपके सभी विघ्न हर लें और आपके जीवन को सुख-समृद्धि से भर दें। आपकी हर मनोकामना पूरी हो。"},
+  {id:"f17", lang:"india", name:"India: ईद-उल-फितर", icon:"🌙", type:"festival", txt:"ईद मुबारक! यह पावन पर्व आपके जीवन में अमन, चैन, भाईचारा और बेशुमार खुशियां लाए। अल्लाह आपकी दुआएं कुबूल फरमाए और जीवन रोशन करे。"},
+  {id:"f18", lang:"india", name:"India: क्रिसमस", icon:"🎄", type:"festival", txt:"क्रिसमस की आत्मीय शुभकामनाएं! आपके जीवन में प्रेम, शांति और उल्लास की बहार आए। सैंटा आपके लिए ढेर सारी खुशियां और उपहार लेकर आएं。"},
+  {id:"f19", lang:"india", name:"India: लोहड़ी (Lohri)", icon:"🔥", type:"festival", txt:"लोहड़ी की आपको लख-लख बधाइयां! आग की गर्माहट और अपनों का साथ आपके जीवन में हमेशा सकारात्मकता और ऊर्जा बनाए रखे。"},
+  {id:"f20", lang:"india", name:"India: पोंगल (Pongal)", icon:"🌾", type:"festival", txt:"सुखी फसल और प्रकृति के आभार का पर्व पोंगल आपके लिए ढेर सारी बरकत और नया उल्लास लेकर आए! मंगलमय शुभकामनाएं。"},
+
+  // 3. USA / UK
+  {id:"f21", lang:"usa", name:"USA / UK: Christmas", icon:"🎄", type:"festival", txt:"Wishing you a magical and Merry Christmas filled with love, laughter, and wonderful memories! May your home be blessed with warmth, peace, and joyous moments throughout the coming year."},
+  {id:"f22", lang:"usa", name:"USA / UK: Halloween", icon:"🎃", type:"festival", txt:"Wishing you a spook-tacular Halloween filled with spooky fun, laughter, and endless treats! Have an amazing night full of excitement."},
+  {id:"f23", lang:"usa", name:"USA / UK: Thanksgiving", icon:"🦃", type:"festival", txt:"May your heart be full of gratitude and your home full of joy this Thanksgiving. Wishing you abundant blessings and wonderful times with family."},
+  {id:"f24", lang:"usa", name:"USA / UK: Independence Day", icon:"🎆", type:"festival", txt:"Happy 4th of July! Wishing you a wonderful celebration with family, friends, fireworks, and great pride. Have an amazing holiday!"},
+  {id:"f25", lang:"usa", name:"USA / UK: New Year's Eve", icon:"🥂", type:"festival", txt:"Cheers to a brand new year! Wishing you immense success, stellar health, boundless happiness, and wonderful adventures ahead."},
+  {id:"f26", lang:"usa", name:"USA / UK: Easter", icon:"🐰", type:"festival", txt:"Have a blessed, peaceful, and joyful Easter surrounded by your loved ones. May this spring bring renewed hope and happiness."},
+  {id:"f27", lang:"usa", name:"USA / UK: Valentine's Day", icon:"💖", type:"festival", txt:"Happy Valentine's Day! Sending you lots of love, warm hugs, and appreciation. May your day be as special and wonderful as you are."},
+  {id:"f28", lang:"usa", name:"USA / UK: St. Patrick's Day", icon:"☘️", type:"festival", txt:"May the luck of the Irish be with you today and always. Wishing you great prosperity, happiness, and joyful celebrations!"},
+  {id:"f29", lang:"usa", name:"USA / UK: Memorial Day", icon:"🇺🇸", type:"festival", txt:"Honoring those who served. Wishing you a reflective, peaceful, and meaningful Memorial Day weekend with your family."},
+  {id:"f30", lang:"usa", name:"USA / UK: Labor Day", icon:"🛠️", type:"festival", txt:"Happy Labor Day! Enjoy a well-deserved break, relaxing moments, and great times with family and friends."},
+
+  // 4. Japan
+  {id:"f31", lang:"japan", name:"Japan: 桜祭り (Sakura)", icon:"🌸", type:"festival", txt:"美しい桜の季節をお祝いします。素晴らしい春の訪れとともに、あなたの心にもたくさんの笑顔と幸せの花が咲き誇りますように！心からお祈り申し上げます。"},
+  {id:"f32", lang:"japan", name:"Japan: 正月 (New Year)", icon:"🎍", type:"festival", txt:"明けましておめでとうございます！本年も素晴らしい一年になりますように。健康と幸運が絶えず訪れる実り多き年でありますよう心よりお祈り申し上げます。"},
+  {id:"f33", lang:"japan", name:"Japan: 七夕 (Tanabata)", icon:"🎋", type:"festival", txt:"星に願いを込めて。あなたの夢や願い事がすべて叶い、輝かしい未来へと突き進んでいけるよう心から応援しています！素敵な七夕をお過ごしください。"},
+  {id:"f34", lang:"japan", name:"Japan: お盆 (Obon)", icon:"🏮", type:"festival", txt:"先祖の霊を迎え、家族みんなが健やかに過ごせる穏やかなお盆をお祈りします。心安らぐ素晴らしい時間になりますように。"},
+  {id:"f35", lang:"japan", name:"Japan: ゴールデンウィーク", icon:"🎏", type:"festival", txt:"楽しい大型連休、素晴らしい休暇をお過ごしください！日頃の疲れを癒やし、たくさんの楽しい思い出が作れますように。"},
+  {id:"f36", lang:"japan", name:"Japan: こどもの日", icon:"🎏", type:"festival", txt:"子どもの健やかな成長と大きな幸せを心からお祝いします！将来の夢に向かって元気に羽ばたいていけますように。"},
+  {id:"f37", lang:"japan", name:"Japan: ひな祭り", icon:"🎎", type:"festival", txt:"桃の節句、女の子の健やかな成長と幸福を祈る素晴らしい一日を！心温まる穏やかな時間が過ごせますように。"},
+  {id:"f38", lang:"japan", name:"Japan: 夏祭り (Summer)", icon:"🎆", type:"festival", txt:"屋台や花火が彩る日本の伝統的な夏祭りを思いっきり楽しもう！最高の夏の思い出が作れますように。"},
+  {id:"f39", lang:"japan", name:"Japan: 月見 (Tsukimi)", icon:"🌕", type:"festival", txt:"美しい秋の満月を眺めながら、豊作と平穏に感謝する夜を。心穏やかで満たされた時間を過ごせますように。"},
+  {id:"f40", lang:"japan", name:"Japan: 七五三", icon:"👘", type:"festival", txt:"子どもの成長の節目を祝い、これからの健康と長寿、そして幸せを心から祈願します。"},
+
+  // 5. Middle East (Arab)
+  {id:"f41", lang:"arab", name:"Middle East: عيد الفطر", icon:"🌙", type:"festival", txt:"عيد مبارك! تقبل الله طاعاتكم وأسعد أيامكم وكل عام وأنتم بخير. أععاد الله عليكم عيد الفطر باليمن والبركات والصحة والسعادة، وجعل أيامكم كلها أعياداً وفرحاً."},
+  {id:"f42", lang:"arab", name:"Middle East: رمضان كريم", icon:"🕌", type:"festival", txt:"رمضان كريم! أعاده الله علينا وعليكم باليمن والبركات والأمن والسلام. جعل الله أيامكم مباركة وأعانكم على الصيام والقيام وبلغكم ليلة القدر."},
+  {id:"f43", lang:"arab", name:"Middle East: عيد الأضحى", icon:"🐑", type:"festival", txt:"عيد أضحى مبارك! أعاده الله عليكم بالصحة والعافية والمسرات. تقبل الله أعمالكم وأدام عليكم الفرح والسرور في كل خطوة."},
+  {id:"f44", lang:"arab", name:"Middle East: المولد النبوي", icon:"✨", type:"festival", txt:"مبارك ميلاد النبي المصطفى صلى الله عليه وسلم، أعاده الله على الأمة بالسلام الخير والأمان. جعلنا الله ممن يقتدون سيرته العطرة."},
+  {id:"f45", lang:"arab", name:"Middle East: رأس السنة الهجرة", icon:"🕋", type:"festival", txt:"كل عام وأنتم بخير بمناسبة رأس السنة الهجرة المباركة. نسأل الله أن تكون سنة خير وبركة وسلام على الجميع."},
+  {id:"f46", lang:"arab", name:"Middle East: عاشوراء", icon:"🕊️", type:"festival", txt:"نسأل الله أن يجعل أيامكم عامرة بالخير واليمن والبركات في ذكرى عاشوراء. ألهمكم الله الصبر والسلوان والتقرب إليه."},
+  {id:"f47", lang:"arab", name:"Middle East: الإسراء والمعراج", icon:"🌟", type:"festival", txt:"مبارك ذكرى الإسراء والمعراج، أعاده الله بالسلام والامن على الأمة الإسلامية جمعاء. بارك الله في أوقاتكم."},
+  {id:"f48", lang:"arab", name:"Middle East: ليلة القدر", icon:"💫", type:"festival", txt:"تقبل الله قيامكم وصيامكم وجعلكم من عتقائه في ليلة القدر المباركة. غفر الله ذنوبكم واستجاب دعواتكم."},
+  {id:"f49", lang:"arab", name:"Middle East: عيد الغدير", icon:"🟢", type:"festival", txt:"كل عام وأنتم متمسكون بولاية أمير المؤمنين في عيد الغدير الأغر. أسعد الله أيامكم وجعلكم من الثابتين على النهج."},
+  {id:"f50", lang:"arab", name:"Middle East: الوطني (National)", icon:"🇦🇪", type:"festival", txt:"دام عزك يا وطن! نتمنى لبلادنا الحبيبة دوام الأمن والازدهار والتقدم والاستقرار. كل عام ونحن في رفعة ومجد."},
+
+  // 6. Latin America
+  {id:"f51", lang:"latin", name:"Latin America: Carnaval", icon:"🎭", type:"festival", txt:"¡Feliz Carnaval! Que la vida te sorprenda con ritmo, color y alegría infinita. Que cada comparsa llene tu corazón de energía positiva y momentos inolvidables."},
+  {id:"f52", lang:"latin", name:"Latin America: Día de Muertos", icon:"💀", type:"festival", txt:"Recordando con amor y honrando la memoria de nuestros seres queridos. ¡Feliz Día de Muertos! Que su luz guíe siempre nuestros caminos con paz y amor eterno."},
+  {id:"f53", lang:"latin", name:"Latin America: Día de Reyes", icon:"👑", type:"festival", txt:"¡Feliz Día de Reyes! Que la ilusión, la magia y los mejores regalos inunden tu hogar, trayendo unión y felicidad a tu familia."},
+  {id:"f54", lang:"latin", name:"Latin America: Inti Raymi", icon:"☀️", type:"festival", txt:"¡Feliz Inti Raymi! Que la energía del Sol ilumine siempre tu camino, fortalezca tu espíritu y prospere tu cosecha en este nuevo ciclo."},
+  {id:"f55", lang:"latin", name:"Latin America: Semana Santa", icon:"⛪", type:"festival", txt:"Que tengas una semana de paz, reflexión profunda, descanso y unión familiar. Que la armonía reine en tu hogar."},
+  {id:"f56", lang:"latin", name:"Latin America: Fiesta de San Juan", icon:"🔥", type:"festival", txt:"¡Feliz noche de San Juan! Que las fogatas alejen las malas vibras, purifiquen el ambiente y traigan bendiciones abundantes."},
+  {id:"f57", lang:"latin", name:"Latin America: La Tomatina", icon:"🍅", type:"festival", txt:"¡A divertirse a lo grande en la fiesta más roja y divertida del año! Que la alegría y la buena onda no falten nunca."},
+  {id:"f58", lang:"latin", name:"Latin America: Día de Independencia", icon:"🇨🇴", type:"festival", txt:"¡Viva la patria! Celebremos con orgullo nuestra libertad, historia y cultura. Que el futuro nos depare prosperidad y unión."},
+  {id:"f59", lang:"latin", name:"Latin America: Posadas Navideñas", icon:"🕯️", type:"festival", txt:"Cantando villancicos y pidiendo posada con alegría, hospitalidad y fraternidad. Que el espíritu navideño llene tu casa de paz."},
+  {id:"f60", lang:"latin", name:"Latin America: Navidad", icon:"🎄", type:"festival", txt:"¡Feliz Navidad! Que la paz, el amor y la prosperidad reinen en tu hogar hoy y siempre. Disfruta al máximo con tus seres queridos."},
+
+  // 7. France
+  {id:"f61", lang:"france", name:"France: Fête Nationale", icon:"🇫🇷", type:"festival", txt:"Joyeuse Fête Nationale ! Passez une excellente journée remplie de célébrations, de feux d'artifice et de moments chaleureux avec vos proches."},
+  {id:"f62", lang:"france", name:"France: Noël", icon:"🎄", type:"festival", txt:"Joyeux Noël ! Que cette période de fêtes soit remplie de bonheur, de magie, de rires et de doux moments partagés en famille."},
+  {id:"f63", lang:"france", name:"France: Pâques", icon:"🐰", type:"festival", txt:"Joyeuses Pâques ! Profitez pleinement de cette belle fête printanière en famille, pleine de douceur et de gourmandise."},
+  {id:"f64", lang:"france", name:"France: Nouvel An", icon:"🍾", type:"festival", txt:"Bonne année ! Meilleurs vœux de santé, de réussite, de prospérité et de bonheur pour cette nouvelle année qui commence."},
+  {id:"f65", lang:"france", name:"France: Fête de la Musique", icon:"🎵", type:"festival", txt:"Vivez au rythme des mélodies et profitez de cette grande fête de la musique pour chanter, danser et vibrer de joie !"},
+  {id:"f66", lang:"france", name:"France: Épiphanie", icon:"👑", type:"festival", txt:"Joyeuse Épiphanie ! Qui aura la fève dans la galette des rois ? Passez un moment délicieux et convivial."},
+  {id:"f67", lang:"france", name:"France: Chandeleur", icon:"🥞", type:"festival", txt:"Joyeuse Chandeleur ! Savourez de délicieuses crêpes en bonne compagnie et que la chance soit avec vous toute l'année."},
+  {id:"f68", lang:"france", name:"France: Poisson d'Avril", icon:"🐟", type:"festival", txt:"Attention aux blagues et aux poissons en papier collés dans le dos ! Passez une journée pleine de rires et de bonne humeur."},
+  {id:"f69", lang:"france", name:"France: Fête du Travail", icon:"💐", type:"festival", txt:"Joyeux 1er mai ! Offrez du muguet du bonheur à ceux que vous aimez. Que ce brin vous apporte chance et prospérité."},
+  {id:"f70", lang:"france", name:"France: Armistice Day", icon:"🕊️", type:"festival", txt:"En souvenir de la paix, pensées et recueillement en ce jour de commémoration pour honorer les valeurs de solidarité."},
+
+  // 8. Germany
+  {id:"f71", lang:"germany", name:"Germany: Oktoberfest", icon:"🍺", type:"festival", txt:"O'zapft is! Viel Spaß, Freude und eine wunderbare Zeit beim Oktoberfest! Genieße die großartige Atmosphäre und gute Gesellschaft."},
+  {id:"f72", lang:"germany", name:"Germany: Weihnachten", icon:"⭐", type:"festival", txt:"Frohe Weihnachten und besinnliche Feiertage im Kreise deiner Lieben! Möge dein Zuhause von Wärme und Frieden erfüllt sein."},
+  {id:"f73", lang:"germany", name:"Germany: Ostern", icon:"🐣", type:"festival", txt:"Frohe Ostern! Genieße die fröhlichen Feiertage, die wärmende Frühlingssonne und eine wundervolle Zeit mit der Familie."},
+  {id:"f74", lang:"germany", name:"Germany: Silvester", icon:"🎆", type:"festival", txt:"Guten Rutsch ins neue Jahr! Viel Erfolg, beste Gesundheit, Glück und tolle Erlebnisse für das kommende Jahr."},
+  {id:"f75", lang:"germany", name:"Germany: Karneval / Fasching", icon:"🤡", type:"festival", txt:"Helau und Alaaf! Habt viel Spaß beim närrischen Treiben, Verkleiden und Feiern. Lasst es ordentlich krachen!"},
+  {id:"f76", lang:"germany", name:"Germany: Tag der Einheit", icon:"🇩🇪", type:"festival", txt:"Einen schönen Tag der Deutschen Einheit wünschen wir dir und deiner Familie! Möge der Zusammenhalt immer stärker werden."},
+  {id:"f77", lang:"germany", name:"Germany: Pfingsten", icon:"🕊️", type:"festival", txt:"Frohe Pfingsten! Genieße das verlängerte Wochenende, die blühende Natur und erholsame Momente der Ruhe."},
+  {id:"f78", lang:"germany", name:"Germany: Maifeiertag", icon:"🌳", type:"festival", txt:"Einen fröhlichen Mai-Anfang und schöne Ausflüge in den blühenden Frühling! Bleib gesund und munter."},
+  {id:"f79", lang:"germany", name:"Germany: St. Martin's Day", icon:"🏮", type:"festival", txt:"Schöne Laternenumzüge und Lichterglanz zum Martinstag! Möge ein Licht der Nächstenliebe deinen Weg erhellen."},
+  {id:"f80", lang:"germany", name:"Germany: Berlinale", icon:"🎬", type:"festival", txt:"Feiere die Welt des Films und der Kultur mit tollen Momenten, Inspiration und unvergesslichen Eindrücken!"},
+
+  // 9. Korea
+  {id:"f81", lang:"korea", name:"Korea: 설날 (Seollal)", icon:"🧧", type:"festival", txt:"새해 복 많이 받으시고 늘 건강하시기를 기원합니다. 행복한 설날 보내세요! 떡국처럼 따뜻하고 기분 좋은 일만 가득한 한 해가 되기를 바랍니다."},
+  {id:"f82", lang:"korea", name:"Korea: 추석 (Chuseok)", icon:"🌕", type:"festival", txt:"풍성한 한가위 보름달처럼 마음까지 넉넉하고 풍요로운 추석 보내세요! 소원하시는 모든 일이 이루어지기를 진심으로 기원합니다."},
+  {id:"f83", lang:"korea", name:"Korea: 단오 (Dano)", icon:"🌿", type:"festival", txt:"양기가 가장 왕성한 단오를 맞아 늘 건강하시고 좋은 일만 가득하시길 바랍니다. 시원하고 활기찬 하루 되세요."},
+  {id:"f84", lang:"korea", name:"Korea: 삼일절", icon:"🇰🇷", type:"festival", txt:"순국선열들의 숭고한 뜻을 기리며, 평화와 번영이 가득한 하루 되세요. 태극기 휘날리며 자랑스러운 하루를 보냅시다."},
+  {id:"f85", lang:"korea", name:"Korea: 부처님 오신 날", icon:"🪷", type:"festival", txt:"부처님의 자비와 지혜가 온 누리에 가득하길 기원합니다. 마음에 평안과 행복이 깃드는 거룩한 날이 되기를 바랍니다."},
+  {id:"f86", lang:"korea", name:"Korea: 어린이날", icon:"🧸", type:"festival", txt:"모든 어린이가 밝고 건강하게 자라기를 진심으로 축복합니다! 웃음꽃이 피어나는 행복한 하루가 되기를 소망합니다."},
+  {id:"f87", lang:"korea", name:"Korea: 현충일", icon:"🎖️", type:"festival", txt:"나라를 위해 희생하신 호국영령들의 숭고한 뜻을 기립니다. 경건하고 감사한 마음을 담아 평화로운 하루를 보냅시다."},
+  {id:"f88", lang:"korea", name:"Korea: 광복절", icon:"🇰🇷", type:"festival", txt:"조국의 빛을 되찾은 광복절의 의미를 되새기는 기쁜 하루 되세요. 자유와 평화의 소중함을 느끼는 멋진 날이 되기를!"},
+  {id:"f89", lang:"korea", name:"Korea: 개천절", icon:"🏛️", type:"festival", txt:"대한민국 국경일 개천절을 경축하며 평화와 번영이 가득하길 바랍니다. 하늘이 열린 뜻깊은 날을 축하합니다."},
+  {id:"f90", lang:"korea", name:"Korea: 동지 (Dongji)", icon:"🥣", type:"festival", txt:"붉은 팥죽을 나누며 액운을 쫓고 건강을 기원하는 따뜻한 동지 되세요. 다가오는 새해에는 좋은 일만 가득하세요!"},
+
+  // 10. China
+  {id:"f91", lang:"china", name:"China: 春节 (Spring Festival)", icon:"🏮", type:"festival", txt:"祝您新春快乐，阖家幸福，万事如意，宏图大展！愿新的一年里财源广进、身体健康、心想事成，每一天都充满阳光与欢笑！"},
+  {id:"f92", lang:"china", name:"China: 中秋节 (Mid-Autumn)", icon:"🥮", type:"festival", txt:"花好月圆人团圆，祝您中秋节快乐，阖家美满幸福！愿圆圆的月亮带去我们最真挚的祝福和无限的思念。"},
+  {id:"f93", lang:"china", name:"China: 端午节 (Dragon Boat)", icon:"🚣", type:"festival", txt:"浓情端午，粽叶飘香。祝您和家人端午安康，万事顺心！愿健康与好运永远伴随在您的左右。"},
+  {id:"f94", lang:"china", name:"China: 元宵节 (Lantern)", icon:"🏮", type:"festival", txt:"元宵佳节到，花灯分外俏。祝您阖家团圆，生活美满甜蜜，事业蒸蒸日上，好运连连！"},
+  {id:"f95", lang:"china", name:"China: 清明节 (Qingming)", icon:"🍃", type:"festival", txt:"慎终追远，缅怀先人。祝您及家人平安健康，万事顺遂，珍惜当下每一刻的美好时光。"},
+  {id:"f96", lang:"china", name:"China: 重阳节 (Double Ninth)", icon:"🏔️", type:"festival", txt:"九九重阳，登高望远。祝天下长辈健康长寿，福如东海，乐享天伦之乐！"},
+  {id:"f97", lang:"china", name:"China: 国庆节 (National Day)", icon:"🇨🇳", type:"festival", txt:"欢度国庆，祝福祖国繁荣昌盛，祝您假期快乐，放松心情，收获满满的幸福感！"},
+  {id:"f98", lang:"china", name:"China: 七夕节 (Valentine's)", icon:"🌌", type:"festival", txt:"浪漫七夕，愿天下有情人终成眷属，幸福美满！愿您的爱情甜蜜长久，温馨如初。"},
+  {id:"f99", lang:"china", name:"China: 劳动节 (Labor Day)", icon:"⭐", type:"festival", txt:"致敬每一位辛勤的劳动者，祝您五一劳动节快乐！享受轻松愉快的假期，放松身心。"},
+  {id:"f100", lang:"china", name:"China: 冬至 (Dongzhi)", icon:"🥟", type:"festival", txt:"冬至到，吃饺子。愿融融暖意驱散严寒，阖家幸福安康，好运接踵而至！"},
+
+  // 11. Special Occasions (Birthday, Anniversary, Propose)
+  {
+    id:"p1", lang:"personal", name:"🎂 Radiant Birthday Celebration", icon:"🎂", type:"birthday", 
+    texts: {
+      nepal: "जन्मदिनको हार्दिक मंगलमय शुभकामना {name}! आज {age} वर्ष प्रवेश गरेकोमा बधाई छ। आगामी वर्षले तिम्रो जीवनमा अनन्त खुसी, सफलता र उज्यालो बोकेर ल्याओस्।",
+      india: "जन्मदिन की ढेरों बधाइयां {name}! आज {age} साल के होने पर आपको दिल से शुभकामनाएं। आपका आने वाला साल ढेरों खुशियों और सफलताओं से भरा हो।",
+      usa: "Happy Birthday {name}! Wishing you a dazzling milestone of turning {age} today! May your year ahead be overflowing with radiant joy, spectacular achievements, and boundless happiness.",
+      japan: "お誕生日おめでとうございます、{name}さん！{age}歳のお祝いを心から申し上げます。素晴らしい一年になりますように。",
+      arab: "عيد ميلاد سعيد {name}! أتمنى لك عيد ميلاد رائع بمناسبة بلوغك {age} عاماً اليوم! لتكن سنتك القادمة مليئة بالفرح والسعادة.",
+      latin: "¡Feliz Cumpleaños {name}! ¡Te deseo un cumpleaños deslumbrante al cumplir {age} años hoy! Que tu año esté lleno de alegría y éxito.",
+      france: "Joyeux anniversaire {name} ! Je te souhaite un merveilleux anniversaire pour tes {age} ans ! Que cette année soit pleine de joie et de succès.",
+      germany: "Alles Gute zum Geburtstag, {name}! Herzlichen Glückwunsch zu deinem {age}. Geburtstag! Möge dein Jahr voller Freude und Erfolg sein.",
+      korea: "{name}님, 생일 축하합니다! {age}세가 되신 것을 진심으로 축하드리며 늘 행복하시길 바랍니다.",
+      china: "{name}，生日快乐！祝贺你今天迎来{age}岁生日！愿你的新岁充满无尽的欢乐与成功."
+    }
+  },
+  {
+    id:"p2", lang:"personal", name:"💖 Eternal Love Propose", icon:"💍", type:"propose", 
+    texts: {
+      nepal: "मेरो प्यारो {name}, तिमी मेरो जीवनमा आएपछि हरेक दिन उज्यालो र सुन्दर भएको छ। के तिमी सधैंभरि मेरो बन्ने सौभाग्यादिन्छौ?",
+      india: "मेरी सबसे प्यारी {name}, जब से तुम मेरी जिंदगी में आई हो, हर रंग और भी खूबसूरत हो गया है। क्या तुम हमेशा के लिए मेरी बनने का सौभाग्य दोगी?",
+      usa: "My dearest {name}, from the very magical moment you graced my life, every single color grew brighter. Will you do me the absolute honor of being mine forever?",
+      japan: "最愛の{name}へ。あなたが私の人生に現れてから、すべての景色が輝き始めました。永遠に私のもとへ来てくれませんか？",
+      arab: "أعز الناس {name}, منذ اللحظة السحرية التي دخلتِ فيها حياتي وكل شيء أصبح أكثر إشراقاً. هل تقبلين أن تكوني لي إلى الأبد؟",
+      latin: "Mi queridísimo/a {name}, desde el momento mágico en que llegaste a mi vida, todo se volvió más brillante. ¿Me harías el honor de ser mío/a para siempre?",
+      france: "Mon/Ma très cher(e) {name}, depuis le moment magique où tu es entré(e) dans ma vie, tout est devenu plus beau. Veux-tu m'accorder l'honneur d'être à moi pour toujours ?",
+      germany: "Mein allerliebster/meine allerliebste {name}, seit dem magischen Moment, als du in mein Leben getreten bist, ist alles heller geworden. Willst du für immer mein/e sein?",
+      korea: "가장 소중한 {name}님, 당신이 내 삶에 들어온 순간부터 모든 세상이 환해졌습니다. 영원히 나와 함께 해 주시겠어요?",
+      china: "我最亲爱的{name}，自从你走进我的生命，每一个瞬间都变得无比绚丽。你愿意做我永远的唯一吗？"
+    }
+  },
+  {
+    id:"p3", lang:"personal", name:"🥂 Enchanted Love Anniversary", icon:"🥂", type:"anniversary", 
+    texts: {
+      nepal: "विवाह वा प्रेम वार्षिकोत्सवको मंगलमय शुभकामना {name}! हामीले सँगै बिताएको {time} को पवित्र प्रेम र सुन्दर सम्झनाहरू सधैं अमर रहोस्।",
+      india: "वर्षगांठ की हार्दिक शुभकामनाएं {name}! हमारे {time} के इस पवित्र प्रेम, हसीन यादों और अटूट बंधन का जश्न मनाते हैं।",
+      usa: "Happy Anniversary {name}! Celebrating {time} of purest love, breathtaking memories, and an unbreakable bond. Here is to an eternity more together!",
+      japan: "記念日おめでとうございます、{name}さん！純粋な愛と素晴らしい思い出に満ちた{time}を祝して。これからも永遠に共に。",
+      arab: "ذكرى سنوية سعيدة {name}! نتحتفل بمرور {time} من الحب النقي والذكريات الرائعة. نخب الأبدية معاً!",
+      latin: "¡Feliz Aniversario {name}! Celebrando {time} de amor puro y recuerdos inolvidables. ¡Brindemos por una eternidad más juntos!",
+      france: "Joyeux anniversaire de mariage/relation {name} ! Célébrons {time} d'amour pur et de précieux souvenirs. Encore une éternité ensemble !",
+      germany: "Alles Gute zum Jahrestag, {name}! Wir feiern {time} voller reiner Liebe und unvergesslicher Erinnerungen. Auf eine ewige gemeinsame Zukunft!",
+      korea: "{name}님, 기념일 축하합니다! 순수한 사랑과 아름다운 기억들로 함께한 {time}을 축하하며 영원히 함께합시다.",
+      china: "{name}，周年纪念日快乐！庆祝我们度过{time}纯粹的爱与难忘的回忆。愿我们携手共度无数个未来！"
+    }
+  },
+  {
+    id:"p4", lang:"personal", name:"🎉 Golden Birthday Spectacle", icon:"✨", type:"birthday", 
+    texts: {
+      nepal: "जन्मदिनको मुरीमुरी शुभकामना {name}! आज {age} वर्ष पुग्दा तिमी झन् आकर्षक देखिएकी छौ/छौ। यो वर्ष तिम्रा सपनाहरू साकार होऊन्।",
+      india: "जन्मदिन की बहुत-बहुत बधाई {name}! {age} साल के होना आप पर बहुत जंचता है। यह शानदार वर्ष आपके सबसे बड़े सपनों को पूरा करे।",
+      usa: "Happy Birthday {name}! Turning {age} looks effortlessly stunning on you! May this magnificent year draw you closer to your grandest dreams and fill your soul with bliss.",
+      japan: "{name}さん、お誕生日おめでとうございます！{age}歳を迎えたあなたの輝きは最高です。夢が叶う素晴らしい一年になりますように。",
+      arab: "عيد ميلاد سعيد {name}! بلوغك {age} عاماً يبدو رائعاً عليك! لتجلب لك هذه السنة الرائعة أحلامك العظيمة.",
+      latin: "¡Feliz Cumpleaños {name}! ¡Cumplir {age} años te queda increíble! Que este magnífico año te acerque a tus mayores sueños.",
+      france: "Joyeux anniversaire {name} ! Tu portes à merveille tes {age} ans ! Que cette magnifique année te rapproche de tes plus grands rêves.",
+      germany: "Alles Gute zum Geburtstag, {name}! Die {age} stehen dir fantastisch! Möge dieses großartige Jahr dich deinen größten Träumen näherbringen.",
+      korea: "{name}님 생일 축하해요! {age}세가 되신 모습이 정말 멋지십니다. 가장 큰 꿈에 한 걸음 더 다가가는 한 해가 되기를 바랍니다.",
+      china: "{name}生日快乐！{age}岁的你光彩照人！愿这个壮丽的一年让你更接近最伟大的梦想，充满幸福。"
+    }
+  },
+  {
+    id:"p5", lang:"personal", name:"🌹 Soulmate Heart Propose", icon:"🌹", type:"propose", 
+    texts: {
+      nepal: "मेरो मुटुको ढुकढुकी तिमीसँगै चल्छ {name}। तिम्रो छेउमा बिताएको हर पल सपना जस्तै लाग्छ। के मेरो हृदय स्विकार गर्छौ?",
+      india: "मेरी धड़कनें आपके साथ धड़कती हैं {name}। आपके साथ बिताया हर पल एक सपने जैसा है। क्या आप मेरा दिल स्वीकार करेंगे?",
+      usa: "My heart beats in rhythm with yours, {name}. Every second spent by your side feels like a dream come true. Let us journey through eternity hand in hand. Will you accept my heart?",
+      japan: "{name}、私の心はあなたと一緒に鼓動しています。あなたと過ごす毎秒が夢のようです。私の心を受け取ってくれますか？",
+      arab: "قلبي ينبض بنبضك {name}. كل ثانية أقضيها بجانبك تبدو حلمًا تحقق. هل تقبلين قلبي؟",
+      latin: "Mi corazón late al ritmo del tuyo, {name}. Cada segundo a tu lado es un sueño hecho realidad. ¿Aceptarás mi corazón?",
+      france: "Mon cœur bat au rythme du tien, {name}. Chaque seconde à tes côtés est un rêve éveillé. Veux-tu accepter mon cœur ?",
+      germany: "Mein Herz schlägt im Takt mit deinem, {name}. Jede Sekunde an deiner Seite ist wie ein wahr gewordener Traum. Willst du mein Herz annehmen?",
+      korea: "{name}님, 제 심장은 당신과 함께 뛰고 있습니다. 곁에 있는 모든 순간이 꿈만 같아요. 제 마음을 받아주시겠어요?",
+      china: "{name}，我的心与你同频共振。在你身边的每一秒都像梦想成真。你愿意接受我的真心吗？"
+    }
+  },
+  {
+    id:"p6", lang:"personal", name:"💐 Cherished Anniversary", icon:"💐", type:"anniversary", 
+    texts: {
+      nepal: "मेरो जीवनको साथी {name} लाई वार्षिकोत्सवको शुभकामना! {time} को यो न्यानोपन र प्रेमले मेरो जीवन सजाएको छ।",
+      india: "मेरे अद्भुत साथी {name} को सालगिरह की शुभकामनाएं! {time} की गर्मजोशी और प्यार के लिए धन्यवाद।",
+      usa: "Happy Anniversary to my extraordinary partner {name}! Celebrating {time} of warmth, contagious laughter, and profound devotion. I cherish you more deeply with every passing day.",
+      japan: "素晴らしいパートナーである{name}さん、記念日おめでとうございます！温かさと深い愛に満ちた{time}を祝して。",
+      arab: "ذكرى سنوية سعيدة لشريكي/شريكتي الرائع/ة {name}! نحتفل بمرور {time} من الدفء والولاء العميق.",
+      latin: "¡Feliz aniversario a mi pareja extraordinaria {name}! Celebrando {time} de calidez y profundo amor.",
+      france: "Joyeux anniversaire à mon/ma partenaire extraordinaire {name} ! Célébrons {time} de chaleur et de profonde dévotion.",
+      germany: "Alles Gute zum Jahrestag an meinen wunderbaren Partner {name}! Wir feiern {time} voller Wärme und tiefer Zuneigung.",
+      korea: "멋진 파트너 {name}님, 기념일 축하합니다! 따뜻함과 깊은 헌신으로 함께한 {time}을 축하합니다.",
+      china: "祝我非凡的伴侣{name}周年纪念日快乐！庆祝我们度过充满温暖与深情厚谊的{time}。"
+    }
+  },
+  {
+    id:"p7", lang:"personal", name:"🎈 Epic Birthday Extravaganza", icon:"🎈", type:"birthday", 
+    texts: {
+      nepal: "{age} औं जन्मदिनको भव्य शुभकामना {name}! आजको दिन रमाइलो संगीत र अनन्त खुसीका साथ मनाऔं।",
+      india: "{age}वें जन्मदिन की शानदार शुभकामनाएं {name}! आपके इस अद्भुत दिन को ऊर्जा और संगीत के साथ मनाएं।",
+      usa: "Happy {age}th Birthday {name}! Let us celebrate your magnificent day with roaring energy, enchanting music, and endless celebration. Have an absolute masterpiece of a day!",
+      japan: "{age}歳の誕生日おめでとうございます、{name}さん！最高の音楽とエネルギーでこの素晴らしい一日を祝いましょう！",
+      arab: "عيد ميلاد {age} سعيد {name}! لنحتفل بيومك الرائع بطاقة هائلة وموسيقى ساحرة واحتفال لا ينتهي!",
+      latin: "¡Feliz {age} cumpleaños {name}! ¡Celebremos tu gran día con energía, música y alegría sin fin!",
+      france: "Joyeux {age}e anniversaire {name} ! Célébrons cette magnifique journée avec une énergie folle et une joie immense !",
+      germany: "Alles Gute zum {age}. Geburtstag, {name}! Lass uns diesen großartigen Tag mit toller Musik und endloser Freude feiern!",
+      korean: "{age}번째 생일을 축하합니다, {name}님! 멋진 음악과 끝없는 축하로 이 위대한 하루를 즐겨보세요!",
+      china: "{name}，祝你{age}岁生日快乐！让我们用蓬动的活力、动听的音乐和无尽的欢庆来庆祝这宏伟的日子！"
+    }
+  },
+  {
+    id:"p8", lang:"personal", name:"💌 Magical Destiny Propose", icon:"💌", type:"propose", 
+    texts: {
+      nepal: "तिमी मेरो आजको उज्यालो र भविष्यको सुकोमल सपना हौ {name}। हरेक बिहान र बेलुकी तिमीसँगै बिताउन चाहन्छु। के मेरी संगी बन्छौ?",
+      india: "आप मेरा आज और मेरा आने वाला कल हैं {name}। मैं हर सुबह और शाम आपके साथ बिताना चाहता हूं। क्या आप मेरी जीवनसंगिनी बनेंगी?",
+      usa: "You are my luminous today and all of my breathtaking tomorrows, {name}. I want to cherish every sunrise and sunset exclusively with you. Will you be my eternal soulmate?",
+      japan: "あなたは私の輝く現在、そしてすべての明日です、{name}さん。すべての夜明けと夕日をあなたと分かち合いたい。永遠のソウルメイトになってくれますか？",
+      arab: "أنت حاضري المشرق وكل غدٍ جميل لي {name}. أود أن أشارك كل شروق وغروب معك وحدك. هل تكونين توأم روحي الأبدي؟",
+      latin: "Eres mi luminoso hoy y todos mis mañanas, {name}. Quiero compartir cada amanecer y atardecer solo contigo. ¿Serás mi alma gemela eterna?",
+      france: "Tu es mon présent lumineux et tous mes lendemains, {name}. Je veux chérir chaque lever et coucher de soleil avec toi. Veux-tu être mon âme sœur ?",
+      germany: "Du bist mein strahlendes Heute und all meine atemberaubenden Morgen, {name}. Willst du mein ewiger Seelenverwandter sein?",
+      korean: "당신은 나의 찬란한 오늘이자 눈부신 내일입니다, {name}님. 모든 일출과 일몰을 오직 당신과 함께하고 싶습니다. 영원한 반쪽이 되어주세요.",
+      china: "你是我璀璨的今天和所有惊艳的明天，{name}。我想和你一起珍惜每一个日出日落。你愿意做我永远的灵魂伴侣吗？"
+    }
+  },
+  {
+    id:"p9", lang:"personal", name:"🍷 Milestone Romance Anniversary", icon:"🍷", type:"anniversary", 
+    texts: {
+      nepal: "वार्षिकोत्सवको मंगलमय शुभकामना {name}! हामीले सँगै बिताएको {time} को सम्झना गर्दा मन कृतज्ञताले भरिन्छ। मेरो संसार भएकोमा धन्यवाद।",
+      india: "सालगिरह मुबारक हो {name}! हमारे साथ बिताए गए सुंदर {time} को याद करके दिल भर आता है। मेरी पूरी कायनात बनने के लिए शुक्रिया।",
+      usa: "Happy Anniversary {name}! Reflecting upon our gorgeous {time} together fills my heart with overflowing gratitude. Thank you for being my entire universe.",
+      japan: "記念日おめでとうございます、{name}さん！一緒に過ごした素晴らしい{time}を振り返ると、感謝の気持ちで胸がいっぱいです。",
+      arab: "ذكرى سنوية سعيدة {name}! إن تأملنا في وقتنا الرائع معاً لـ {time} يملأ قلبي بالامتنان. شكراً لكونك عالمي بأكمله.",
+      latin: "¡Feliz Aniversario {name}! Recordar nuestro hermoso {time} juntos llena mi corazón de gratitud. Gracias por ser mi universo entero.",
+      france: "Joyeux anniversaire {name} ! Repenser à notre magnifique {time} ensemble remplit mon cœur de gratitude. Merci d'être tout mon univers.",
+      germany: "Alles Gute zum Jahrestag, {name}! Der Rückblick auf unsere wunderschöne gemeinsame Zeit von {time} erfüllt mich mit tiefer Dankbarkeit.",
+      korean: "기념일 축하해요, {name}님! 함께한 아름다운 {time}을 돌아보니 가슴 깊이 감사함이 차오릅니다. 제 우주가 되어주셔서 감사합니다.",
+      china: "周年纪念日快乐，{name}！回顾我们共同度过的美妙{time}，我的心中充满了无限感激。感谢你成为我的整个宇宙。"
+    }
+  },
+  {
+    id:"p10", lang:"personal", name:"🎁 Ultimate Birthday Blessing", icon:"🎁", type:"birthday", 
+    texts: {
+      nepal: "अद्भुत व्यक्ति {age} औं जन्मदिनको असीमित शुभकामना {name}! तिम्रो कदममा सफलता र मुहारमा ताराभन्दा चकिलो हाँसो सधैं रहोस्।",
+      india: "अद्भुत {name} को {age}वें जन्मदिन की जादुई शुभकामनाएं! महान सफलता आपके कदम चूमे और आपकी मुस्कान सितारों से ज्यादा चमके।",
+      usa: "Wishing a spellbinding {age}th Birthday to the incredible {name}! May grand success follow your footsteps everywhere and your smile shine brighter than the stars.",
+      japan: "素晴らしい{name}さん、魅惑的な{age}歳のお誕生日おめでとうございます！大いなる成功があなたを包み込みますように。",
+      arab: "أتمنى عيد ميلاد {age} ساحرًا للرائع {name}! لتتبعك النجاحات الكبرى في كل خطوة ولتسطع ابتسامتك أكثر من النجوم.",
+      latin: "¡Deseando un fascinante {age} cumpleaños al increíble {name}! Que el gran éxito siga tus pasos y tu sonrisa brille más que las estrellas.",
+      france: "Je souhaite un {age}e anniversaire magique à l'incroyable {name} ! Que le succès suive chacun de tes pas et que ton sourire brille plus que les étoiles.",
+      germany: "Ich wünsche dem unglaublichen {name} einen zauberhaften {age}. Geburtstag! Möge der große Erfolg deine Schritte begleiten.",
+      korean: "놀라운 {name}님의 매혹적인 {age}번째 생일을 축하합니다! 위대한 성공이 항상 함께하고 별보다 더 밝게 미소 지으시길.",
+      china: "祝不可思议的{name}度过一个迷人的{age}岁生日！愿宏伟的成功伴随你的每一步，你的笑容比繁星更耀眼。"
+    }
+  }
+];
+
+let activeTheme = null; let loadedPhoto = null; let customAudioBase64 = null;
+let currentLanguage = "nepal";
+let audioCtx = null; let synthInterval = null;
+
+function enterMatrix() {
+  currentLanguage = document.getElementById('regionSelect').value;
+  
+  const titles = {
+    nepal: "🇳🇵 Nepal Festivals (10)",
+    india: "🇮🇳 India Festivals (10)",
+    usa: "🇺🇸 USA / UK Festivals (10)",
+    japan: "🇯🇵 Japan Festivals (10)",
+    arab: "🇦🇪 Middle East Festivals (10)",
+    latin: "🇧🇷 Latin America Festivals (10)",
+    france: "🇫🇷 France Festivals (10)",
+    germany: "🇩🇪 Germany Festivals (10)",
+    korea: "🇰🇷 Korea Festivals (10)",
+    china: "🇨🇳 China Festivals (10)",
+    personal: "🎉 Special Occasions (10)"
+  };
+  document.getElementById('dashTitle').textContent = titles[currentLanguage] || "Festivals";
+  
+  document.getElementById('entryScreen').style.display = 'none';
+  document.getElementById('hubDashboard').style.display = 'block';
+  
+  buildGrid();
+}
+
+function buildGrid() {
+  const grid = document.getElementById('themeGrid'); grid.innerHTML = '';
+  let filtered = globalFestivals.filter(t => t.lang === currentLanguage || (currentLanguage !== 'personal' && t.lang === currentLanguage));
+  
+  filtered.forEach(t => {
+    const el = document.createElement('div'); el.className = 'card';
+    el.innerHTML = `<span class="emoji">${t.icon}</span><h3>${t.name}</h3>`;
+    el.onclick = () => openConfig(t); grid.appendChild(el);
+  });
+}
+
+document.getElementById('photoFile').onchange = e => {
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const img = new Image(); img.onload = function() {
+      const cvs = document.createElement('canvas'); const ct = cvs.getContext('2d');
+      let w = img.width, h = img.height; const MAX = 300;
+      if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } }
+      cvs.width = w; cvs.height = h; ct.drawImage(img, 0, 0, w, h);
+      loadedPhoto = cvs.toDataURL('image/jpeg', 0.6);
+      document.getElementById('photoStatus').textContent = `✓ Photo Loaded`;
+      document.getElementById('photoStatus').style.display = 'block';
+    }; img.src = ev.target.result;
+  }; reader.readAsDataURL(file);
+};
+
+document.getElementById('audioFile').onchange = e => {
+  const file = e.target.files[0]; if(!file) return;
+  document.getElementById('audioStatus').textContent = `✓ Audio Loaded`;
+  document.getElementById('audioStatus').style.display = 'block';
+  const r = new FileReader(); r.onload = () => { customAudioBase64 = r.result; }; r.readAsDataURL(file);
+};
+
+function toggleAudioFields() { document.getElementById('audioUploadBlock').style.display = (document.getElementById('audioPresetSelect').value === 'upload') ? 'block' : 'none'; }
+
+function openConfig(theme) {
+  activeTheme = theme; document.getElementById('configTitle').textContent = `Setup: ${theme.name}`;
+  
+  // Set default dropdown language to match current selection
+  document.getElementById('configWishLang').value = currentLanguage;
+  
+  const extraBlock = document.getElementById('extraDynamicFields');
+  const ageGroup = document.getElementById('fieldAgeGroup');
+  const timeGroup = document.getElementById('fieldTimeGroup');
+  
+  document.getElementById('targetName').value = "Aayush";
+  
+  if(theme.type === 'birthday') {
+    extraBlock.style.display = 'block';
+    ageGroup.style.display = 'block';
+    timeGroup.style.display = 'none';
+    document.getElementById('targetAge').value = "20";
+  } else if(theme.type === 'anniversary') {
+    extraBlock.style.display = 'block';
+    ageGroup.style.display = 'none';
+    timeGroup.style.display = 'block';
+    document.getElementById('targetTimeTogether').value = "2 Years";
+  } else {
+    extraBlock.style.display = 'none';
+    ageGroup.style.display = 'none';
+    timeGroup.style.display = 'none';
+  }
+  
+  document.getElementById('hubDashboard').style.display = 'none'; document.getElementById('configScreen').style.display = 'block';
+}
+
+function showDashboard() {
+  stopSynthMusic();
+  document.getElementById('configScreen').style.display = 'none';
+  document.getElementById('hubDashboard').style.display = 'block';
+}
+
+function generateSharedLink() {
+  const name = document.getElementById('targetName').value.trim() || 'Aayush';
+  const age = document.getElementById('targetAge').value.trim() || '20';
+  const timeTogether = document.getElementById('targetTimeTogether').value.trim() || '2 Years';
+  const mode = document.getElementById('audioPresetSelect').value;
+  const chosenWishLang = document.getElementById('configWishLang').value;
+  
+  const payload = { n: name, ag: age, tt: timeTogether, l: chosenWishLang, f: activeTheme.id, am: mode };
+  if(mode === 'upload' && customAudioBase64) payload.au = customAudioBase64;
+  if(loadedPhoto) payload.p = loadedPhoto;
+  
+  const encoded = btoa(encodeURIComponent(JSON.stringify(payload))).replace(/=/g, '');
+  document.getElementById('liveUrl').value = `${window.location.origin}${window.location.pathname}#_g_${encoded}`;
+  document.getElementById('shareBlock').style.display = 'block';
+}
+
+function copySharedLink() { const inp = document.getElementById('liveUrl'); inp.select(); navigator.clipboard.writeText(inp.value); }
+function shareToFB() { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(document.getElementById('liveUrl').value)}`); }
+function shareToInsta() { copySharedLink(); window.open(`https://www.instagram.com/`); }
+function shareToWA() { window.open(`https://api.whatsapp.com/send?text=Open%20Gift:%20${encodeURIComponent(document.getElementById('liveUrl').value)}`); }
+
+const vContainer = document.getElementById('visualizerContainer');
+for(let i=0; i<18; i++) { const b = document.createElement('div'); b.className = 'viz-bar'; vContainer.appendChild(b); }
+function animateBars() {
+  const bars = document.getElementsByClassName('viz-bar');
+  for(let b of bars) { b.style.height = (Math.random() * 55 + 5) + 'px'; }
+}
+
+window.onload = () => {
+  if(window.location.hash.startsWith('#_g_')) {
+    try {
+      const payload = JSON.parse(decodeURIComponent(atob(window.location.hash.split('_g_')[1])));
+      document.getElementById('authScreen').style.display = 'none';
+      document.getElementById('entryScreen').style.display = 'none';
+      showDisplayScreen(payload);
+    } catch(e) { console.error(e); }
+  } else {
+    checkAuthSession();
+  }
+};
+
+let currentDisplayData = null;
+function showDisplayScreen(data) {
+  currentDisplayData = data;
+  const fest = globalFestivals.find(x => x.id === data.f) || globalFestivals[0];
+  
+  document.getElementById('dispEventTitle').textContent = `${fest.icon} ${fest.name}`;
+  document.getElementById('dispName').textContent = data.n;
+  
+  let rawTxt = fest.txt;
+  if(fest.texts && data.l && fest.texts[data.l]) {
+    rawTxt = fest.texts[data.l];
+  } else if(fest.texts && fest.texts['nepal']) {
+    rawTxt = fest.texts[data.l || 'nepal'];
+  }
+
+  let formattedTxt = rawTxt
+    .replace(/{name}/g, data.n)
+    .replace(/{age}/g, data.ag || '20')
+    .replace(/{time}/g, data.tt || '2 Years');
+    
+  document.getElementById('dispMessage').textContent = formattedTxt;
+  document.getElementById('displayScreen').classList.add('celebrate-pop');
+  
+  if(data.p) {
+    document.getElementById('dispPhoto').src = data.p;
+    document.getElementById('dispPhotoWrap').style.display = 'block';
+    const bgBlur = document.getElementById('bgPhotoBlur');
+    bgBlur.style.backgroundImage = `url(${data.p})`; bgBlur.style.display = 'block';
+  }
+  
+  document.getElementById('displayScreen').style.display = 'block';
+  spawnFloatingElements(fest.type);
+}
+
+function spawnFloatingElements(type) {
+  let emojis = ['🎈', '✨', '💖', '🎉', '🎁'];
+  if(type === 'birthday') emojis = ['🎂', '🎈', '🎁', '🎉', '✨'];
+  else if(type === 'propose') emojis = ['💍', '💖', '🌹', '💌', '✨'];
+  else if(type === 'anniversary') emojis = ['🥂', '💖', '💐', '✨', '🍷'];
+  
+  setInterval(() => {
+    const el = document.createElement('div');
+    el.className = 'floating-element';
+    el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    el.style.left = Math.random() * window.innerWidth + 'px';
+    el.style.bottom = '-50px';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }, 400);
+}
+
+function startExperience() {
+  document.getElementById('clickToPlayOverlay').style.display = 'none';
+  
+  if(currentDisplayData && currentDisplayData.am === 'upload' && currentDisplayData.au) {
+    const audioElem = new Audio(currentDisplayData.au);
+    audioElem.loop = true;
+    audioElem.volume = 0.8;
+    audioElem.play().catch(e => console.log(e));
+    setInterval(animateBars, 80);
+  } else {
+    startCustomSynth(currentDisplayData ? currentDisplayData.f : 'f1');
+  }
+}
+
+function startCustomSynth(themeId) {
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') { audioCtx.resume(); }
+    
+    const festObj = globalFestivals.find(x => x.id === themeId);
+    let melody = [
+      { f: 392.00, d: 200 }, { f: 440.00, d: 200 }, { f: 523.25, d: 400 },
+      { f: 587.33, d: 200 }, { f: 659.25, d: 400 }, { f: 523.25, d: 200 },
+      { f: 440.00, d: 200 }, { f: 392.00, d: 400 }
+    ];
+    
+    if(festObj && festObj.type === 'birthday') {
+      melody = [
+        { f: 261.63, d: 250 }, { f: 261.63, d: 250 }, { f: 293.66, d: 500 }, { f: 261.63, d: 500 }, { f: 349.23, d: 500 }, { f: 329.63, d: 1000 },
+        { f: 261.63, d: 250 }, { f: 261.63, d: 250 }, { f: 293.66, d: 500 }, { f: 261.63, d: 500 }, { f: 392.00, d: 500 }, { f: 349.23, d: 1000 }
+      ];
+    } else if(festObj && (festObj.type === 'propose' || festObj.type === 'anniversary')) {
+      melody = [
+        { f: 329.63, d: 400 }, { f: 392.00, d: 400 }, { f: 440.00, d: 600 },
+        { f: 493.88, d: 400 }, { f: 523.25, d: 800 }, { f: 440.00, d: 400 }, { f: 392.00, d: 600 }
+      ];
+    }
+    
+    let noteIndex = 0;
+    
+    function playLoop() {
+      if(!audioCtx) return;
+      const note = melody[noteIndex];
+      
+      const osc = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      osc.type = (festObj && festObj.type === 'birthday') ? 'sine' : 'triangle';
+      osc.frequency.setValueAtTime(note.f, audioCtx.currentTime);
+      
+      gainNode.gain.setValueAtTime(0.18, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (note.d / 1000) * 1.2);
+      
+      osc.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      osc.start();
+      osc.stop(audioCtx.currentTime + (note.d / 1000) * 1.2);
+      
+      animateBars();
+      
+      noteIndex = (noteIndex + 1) % melody.length;
+      synthInterval = setTimeout(playLoop, note.d);
+    }
+    
+    playLoop();
+  } catch(e) {
+    console.log("AudioContext error:", e);
+  }
+}
+
+function stopSynthMusic() {
+  if(synthInterval) { clearTimeout(synthInterval); synthInterval = null; }
+  if(audioCtx) { audioCtx.close(); audioCtx = null; }
+}
+</script>
+</body>
+</html>
+```[cite: 1]
